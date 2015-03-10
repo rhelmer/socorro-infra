@@ -465,3 +465,20 @@ resource "aws_instance" "elasticsearch" {
         Environment = "${var.environment}"
     }
 }
+
+resource "aws_elb" "elb_for_elasticsearch" {
+    name = "${var.environment}--elb-for-elasticsearch"
+    availability_zones = [
+        "${aws_instance.collector.*.availability_zone}"
+    ]
+    listener {
+        instance_port = 9200
+        instance_protocol = "http"
+        lb_port = 9200
+        lb_protocol = "http"
+    }
+    # Sit in front of the collector.
+    instances = [
+        "${aws_instance.elasticsearch.*.id}"
+    ]
+}
