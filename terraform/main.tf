@@ -438,9 +438,6 @@ resource "aws_instance" "postgres" {
     block_device {
         device_name = "/dev/sda1"
         delete_on_termination = "${var.del_on_term}"
-        tags {
-            Name = "${var.environment}__postgres_${count.index}__sda1"
-        }
     }
     user_data = "${file(\"socorro_role.sh\")} ${var.puppet_archive} postgres"
     tags {
@@ -469,7 +466,7 @@ resource "aws_instance" "elasticsearch" {
 resource "aws_elb" "elb_for_elasticsearch" {
     name = "${var.environment}--elb-for-elasticsearch"
     availability_zones = [
-        "${aws_instance.collector.*.availability_zone}"
+        "${aws_instance.elasticsearch.*.availability_zone}"
     ]
     listener {
         instance_port = 9200
@@ -477,7 +474,7 @@ resource "aws_elb" "elb_for_elasticsearch" {
         lb_port = 9200
         lb_protocol = "http"
     }
-    # Sit in front of the collector.
+    # Sit in front of the elasticsearch.
     instances = [
         "${aws_instance.elasticsearch.*.id}"
     ]
