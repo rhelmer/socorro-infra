@@ -426,65 +426,40 @@ resource "aws_autoscaling_group" "asg_for_admin" {
 }
 
 # PostgreSQL
-resource "aws_launch_configuration" "lc_for_postgres_asg" {
-    name = "${var.environment}__lc_for_postgres_asg"
-    user_data = "${file(\"socorro_role.sh\")} ${var.puppet_archive} postgres"
-    image_id = "${lookup(var.base_ami, var.region)}"
-    instance_type = "c4.xlarge"
+resource "aws_instance" "postgres" {
+    ami = "${lookup(var.base_ami, var.region)}"
+    instance_type = "t2.micro"
     key_name = "${lookup(var.ssh_key_name, var.region)}"
+    count = 1
     security_groups = [
-        "${aws_security_group.internet_to_elb__http.name}",
         "${aws_security_group.internet_to_any__ssh.name}",
         "${aws_security_group.private_to_private__any.name}"
     ]
-}
-
-resource "aws_autoscaling_group" "asg_for_postgres" {
-    name = "${var.environment}__asg_for_postgres"
-    availability_zones = [
-        "${var.region}a",
-        "${var.region}b"
-    ]
-    depends_on = [
-        "aws_launch_configuration.lc_for_postgres_asg"
-    ]
-    launch_configuration = "${aws_launch_configuration.lc_for_postgres_asg.id}"
-    max_size = 1
-    min_size = 1
-    desired_capacity = 1
-    load_balancers = [
-        "${var.environment}--elb-for-postgres"
-    ]
+    block_device {
+        device_name = "/dev/sda1"
+        delete_on_termination = "${var.del_on_term}"
+        tags {
+            Name = "${var.environment}__postgres_${count.index}__sda1"
+        }
+    }
+    tags {
+        Name = "${var.environment}__postgres_${count.index}"
+        Environment = "${var.environment}"
+    }
 }
 
 # Elastic Search
-resource "aws_launch_configuration" "lc_for_postgres_asg" {
-    name = "${var.environment}__lc_for_postgres_asg"
-    user_data = "${file(\"socorro_role.sh\")} ${var.puppet_archive} postgres"
-    image_id = "${lookup(var.base_ami, var.region)}"
-    instance_type = "c4.xlarge"
+resource "aws_instance" "elasticsearch" {
+    ami = "${lookup(var.base_ami, var.region)}"
+    instance_type = "t2.micro"
     key_name = "${lookup(var.ssh_key_name, var.region)}"
+    count = 1
     security_groups = [
-        "${aws_security_group.internet_to_elb__http.name}",
         "${aws_security_group.internet_to_any__ssh.name}",
         "${aws_security_group.private_to_private__any.name}"
     ]
-}
-
-resource "aws_autoscaling_group" "asg_for_postgres" {
-    name = "${var.environment}__asg_for_postgres"
-    availability_zones = [
-        "${var.region}a",
-        "${var.region}b"
-    ]
-    depends_on = [
-        "aws_launch_configuration.lc_for_postgres_asg"
-    ]
-    launch_configuration = "${aws_launch_configuration.lc_for_postgres_asg.id}"
-    max_size = 1
-    min_size = 1
-    desired_capacity = 1
-    load_balancers = [
-        "${var.environment}--elb-for-postgres"
-    ]
+    tags {
+        Name = "${var.environment}__elasticsearch_${count.index}"
+        Environment = "${var.environment}"
+    }
 }
