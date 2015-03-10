@@ -442,6 +442,7 @@ resource "aws_instance" "postgres" {
             Name = "${var.environment}__postgres_${count.index}__sda1"
         }
     }
+    user_data = "${file(\"socorro_role.sh\")} ${var.puppet_archive} postgres"
     tags {
         Name = "${var.environment}__postgres_${count.index}"
         Environment = "${var.environment}"
@@ -458,6 +459,7 @@ resource "aws_instance" "elasticsearch" {
         "${aws_security_group.internet_to_any__ssh.name}",
         "${aws_security_group.private_to_private__any.name}"
     ]
+    user_data = "${file(\"socorro_role.sh\")} ${var.puppet_archive} elasticsearch"
     tags {
         Name = "${var.environment}__elasticsearch_${count.index}"
         Environment = "${var.environment}"
